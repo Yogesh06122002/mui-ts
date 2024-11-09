@@ -4,13 +4,18 @@ import "./App.css";
 import SignUp from "./pages/SignUp";
 import Login from "./pages/Login";
 
-import { Appbar } from "./components/Appbar";
+import { Layout } from "./pages/Layout";
 
 function App() {
   const router = createBrowserRouter([
     {
-      path: "/",
-      element: <Appbar />,
+      path: "/dashboard",
+      element: <Layout />,
+      children:[
+        {
+          
+        }
+      ]
     },
     {
       path: "/signup",
