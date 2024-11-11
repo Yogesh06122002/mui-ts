@@ -11,11 +11,7 @@ function App() {
     {
       path: "/dashboard",
       element: <Layout />,
-      children:[
-        {
-          
-        }
-      ]
+      children: [{}],
     },
     {
       path: "/signup",
