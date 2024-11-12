@@ -35,7 +35,8 @@ const SignUp = () => {
     password: "",
   };
 
-  const handleSubmit = (values: any, actions: any) => {
+
+  const handleSubmit = (values: object, actions: any) => {
     console.log(values);
     navigate("/login");
     actions.setSubmitting(false);
