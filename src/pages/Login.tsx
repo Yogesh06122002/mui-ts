@@ -17,10 +17,15 @@ import { useState } from "react";
 import { Visibility, VisibilityOff } from "@mui/icons-material";
 import HttpsIcon from "@mui/icons-material/Https";
 import EmailIcon from "@mui/icons-material/Email";
-import { Formik } from "formik";
+import { Formik, FormikHelpers } from "formik";
 import * as Yup from "yup";
 import userList from "../assets/user.json";
 import CloseIcon from "@mui/icons-material/Close";
+
+interface LoginValues{
+  email: string;
+  password: string;
+}
 
 const validateSchema = Yup.object({
   email: Yup.string()
@@ -41,7 +46,7 @@ const Login = () => {
     password: "",
   };
 
-  const handleSubmit = (values: any, actions: any) => {
+  const handleSubmit = (values: LoginValues, actions: FormikHelpers<LoginValues>) => {
     const user = userList.find(
       (user) => user.email === values.email && user.password === values.password
     );

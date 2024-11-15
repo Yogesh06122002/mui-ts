@@ -5,54 +5,239 @@ import {
   Input,
   InputAdornment,
   Paper,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  IconButton,
   CardHeader,
   Avatar,
+  IconButton,
+  Box,
+  Modal,
+  Checkbox,
+  Typography,
+  Switch,
+  FormControl,
+  FormLabel,
+  OutlinedInput,
+  FormHelperText,
 } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
+import { deepOrange } from "@mui/material/colors";
 import ModeEditOutlineIcon from "@mui/icons-material/ModeEditOutline";
 import DeleteIcon from "@mui/icons-material/Delete";
-import { deepOrange } from "@mui/material/colors";
+import { DataGrid, GridColDef, GridRenderCellParams } from "@mui/x-data-grid";
+import { useState } from "react";
+
+interface CountryRow {
+  countryname: string;
+  countrycode: number;
+  active: boolean;
+  id: number;
+  sn: number;
+}
 
 export const CountryList = () => {
-  const createData = (
-    countryName: string,
-    countryCode: number,
-    active: boolean,
-    sn: number
-  ) => {
-    return { countryName, countryCode, active, sn };
+  const [search, setSearch] = useState("");
+  const [editRow, setEditRow] = useState<CountryRow | null>(null);
+  const [open, setOpen] = useState(false);
+  const [rows, setRows] = useState<CountryRow[]>([
+    { countryname: "USA", countrycode: 1, active: true, id: 1, sn: 1 },
+    { countryname: "India", countrycode: 91, active: false, id: 2, sn: 2 },
+    { countryname: "China", countrycode: 86, active: false, id: 3, sn: 3 },
+    { countryname: "Russia", countrycode: 7, active: true, id: 4, sn: 4 },
+    { countryname: "Japan", countrycode: 81, active: false, id: 5, sn: 5 },
+    {
+      countryname: "Germany",
+      countrycode: 49,
+      active: true,
+      id: 6,
+      sn: 6,
+    },
+    {
+      countryname: "United Kingdom",
+      countrycode: 44,
+      active: true,
+      id: 7,
+      sn: 7,
+    },
+    {
+      countryname: "France",
+      countrycode: 33,
+      active: true,
+      id: 8,
+      sn: 8,
+    },
+    {
+      countryname: "Italy",
+      countrycode: 39,
+      active: true,
+      id: 9,
+      sn: 9,
+    },
+    {
+      countryname: "Canada",
+      countrycode: 1,
+      active: true,
+      id: 10,
+      sn: 10,
+    },
+    {
+      countryname: "Spain",
+      countrycode: 34,
+      active: true,
+      id: 11,
+      sn: 11,
+    },
+    {
+      countryname: "Australia",
+      countrycode: 61,
+      active: true,
+      id: 12,
+      sn: 12,
+    },
+  ]);
+  const handleOpen = () => setOpen(true);
+  const handleClose = () => setOpen(false);
+
+  const [newCountry, setNewCountry] = useState<{
+    countryname: string;
+    countrycode: string | number;
+    active: boolean;
+  }>({
+    countryname: "",
+    countrycode: "",
+    active: false,
+  });
+
+  const handleEdit = (row: CountryRow) => {
+    setEditRow({ ...row });
   };
 
-  const rows = [
-    createData("USA", 1, true, 1),
-    createData("India", 91, false, 2),
-    createData("China", 86, false, 3),
-    createData("Russia", 7, true, 4),
-    createData("Japan", 81, false, 5),
-    createData("Germany", 49, false, 6),
-    createData("United Kingdom", 44, false, 7),
-    createData("Brazil", 55, false, 8),
-    createData("France", 33, false, 9),
-    createData("Canada", 1, false, 10),
-    createData("Australia", 61, false, 11),
-    createData("Italy", 39, false, 12),
+  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearch(e.target.value);
+  };
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setNewCountry((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const toggleCountry = (id: number) => {
+    setRows((prevRows) =>
+      prevRows.map((row) =>
+        row.id === id ? { ...row, active: !row.active } : row
+      )
+    );
+  };
+
+  const addRow = () => {
+    const newId = rows.length + 1;
+    const newRow = {
+      ...newCountry,
+      id: newId,
+      sn: newId,
+      countrycode: Number(newCountry.countrycode),
+    };
+    setRows((prevRows) => [...prevRows, newRow]);
+    setNewCountry({
+      countryname: "",
+      countrycode: "",
+      active: false,
+    });
+    handleClose();
+  };
+
+  const deleteCountry = (id: number) => {
+    setRows((prevRows) => prevRows.filter((row) => row.id !== id));
+  };
+
+  const updateCountry = () => {
+    setRows((prevRows) =>
+      prevRows.map((row) =>
+        row.id === editRow?.id
+          ? {
+              ...row,
+              countryname: editRow?.countryname,
+              countrycode: Number(editRow?.countrycode),
+              active: editRow?.active,
+            }
+          : row
+      )
+    );
+    setEditRow(null);
+  };
+
+  const filterRows = rows.filter((row) =>
+    row.countryname.toLowerCase().includes(search.toLowerCase())
+  );
+
+  const columns: GridColDef[] = [
+    {
+      field: "sn",
+      headerName: "SN",
+      headerAlign: "center",
+      align: "center",
+    },
+    {
+      field: "countryname",
+      headerName: "Country Name",
+      headerAlign: "center",
+      align: "center",
+    },
+    {
+      field: "countrycode",
+      headerName: "Country Code",
+      headerAlign: "center",
+      align: "center",
+    },
+    {
+      field: "active",
+      headerName: "Active",
+      headerAlign: "center",
+      align: "center",
+      renderCell: (params: GridRenderCellParams) => (
+        <Checkbox
+          checked={params.row.active}
+          onClick={() => toggleCountry(params.row.id)}
+        />
+      ),
+    },
+
+    {
+      field: "actions",
+      headerName: "Actions",
+      headerAlign: "center",
+      align: "center",
+      renderCell: (params: GridRenderCellParams) => (
+        <>
+          <IconButton
+            onClick={() => handleEdit(params.row as CountryRow)}
+            sx={{ mr: 2 }}
+          >
+            <ModeEditOutlineIcon fontSize="small" />
+          </IconButton>
+          <IconButton onClick={() => deleteCountry(params.row.id)}>
+            <DeleteIcon fontSize="small" />
+          </IconButton>
+        </>
+      ),
+    },
   ];
 
   return (
     <>
       <Card variant="outlined" elevation={10}>
         <CardHeader
-        avatar={ <Avatar sx={{bgcolor:deepOrange[400]}}>CM</Avatar>}
-        title="Country Master"
-        subheader="Create a new country"
-        action={<Button variant="contained" color="warning">Create</Button>}
+          avatar={<Avatar sx={{ bgcolor: deepOrange[400] }}>CM</Avatar>}
+          title="Country Master"
+          subheader="Create a new country"
+          action={
+            <Button
+              variant="contained"
+              color="warning"
+              sx={{ margin: 2, marginRight: 6 }}
+              onClick={handleOpen}
+            >
+              Create
+            </Button>
+          }
         />
         <Divider />
         <Paper
@@ -68,6 +253,8 @@ export const CountryList = () => {
           <Input
             placeholder="Search..."
             disableUnderline
+            value={search}
+            onChange={handleSearch}
             startAdornment={
               <InputAdornment position="start">
                 <SearchIcon />
@@ -80,51 +267,153 @@ export const CountryList = () => {
             }}
           ></Input>
         </Paper>
-        <TableContainer component={Paper}>
-          <Table size="small">
-            <TableHead>
-              <TableRow>
-                <TableCell align="center">S/N</TableCell>
-                <TableCell align="center">Country Name</TableCell>
-                <TableCell align="center">Country Code</TableCell>
-                <TableCell align="center">Active</TableCell>
-                <TableCell align="center">Action</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody >
-              {rows.map((row) => (
-                <TableRow
-                  key={row.sn}
-                  sx={{
-                    "&:last-child td, &:last-child th": { border: 0 },
-                  }}
-                >
-                  <TableCell sx={{ py: 0.1 }} align="center">
-                    {row.sn}
-                  </TableCell>
-                  <TableCell sx={{ py: 0.1 }} align="center">
-                    {row.countryName}
-                  </TableCell>
-                  <TableCell sx={{ py: 0.1 }} align="center">
-                    {row.countryCode}
-                  </TableCell>
-                  <TableCell sx={{ py: 0.1 }} align="center">
-                    {row.active ? "Yes" : "No"}
-                  </TableCell>
-                  <TableCell sx={{ py: 0.1 }} align="center" >
-                    <IconButton sx={{mr:2}}>
-                      <ModeEditOutlineIcon sx={{ fontSize: "18px"}} />
-                    </IconButton>
-                    <IconButton>
-                      <DeleteIcon sx={{ fontSize: "18px" }} />
-                    </IconButton>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
+        <div style={{ height: "calc(100vh - 200px)", width: "100%" }}>
+          <DataGrid
+            density="compact"
+            rows={filterRows}
+            columns={columns.map((col) => ({
+              ...col,
+              flex: 1,
+            }))}
+          />
+        </div>
       </Card>
+      <Modal open={open} onClose={handleClose}>
+        <Box
+          sx={{
+            position: "absolute",
+            top: "50%",
+            left: "50%",
+            transform: "translate(-50%, -50%)",
+            width: 400,
+            bgcolor: "background.paper",
+            borderRadius: 2,
+            boxShadow: 24,
+            p: 4,
+          }}
+        >
+          <Typography variant="h5" align="center" component="h2">
+            Add Country
+          </Typography>
+          <FormControl fullWidth margin="dense" >
+            <FormLabel sx={{fontSize:"0.8rem"}}>Country Name</FormLabel>
+            <OutlinedInput
+              placeholder="Enter the Country Name"
+              size="small"
+              value={newCountry.countryname || ""}
+              onChange={handleChange}
+              name="countryname"
+            />
+            <FormHelperText>Enter the Country Name</FormHelperText>
+          </FormControl>
+          <FormControl fullWidth margin="dense">
+            <FormLabel sx={{fontSize:"0.8rem"}}>Country Code</FormLabel>
+            <OutlinedInput
+              size="small"
+              value={newCountry.countrycode || ""}
+              onChange={handleChange}
+              name="countrycode"
+            />
+            <FormHelperText>Enter the Country Code</FormHelperText>
+          </FormControl>
+          <Box
+            sx={{ display: "flex", gap: 10, justifyContent: "space-between" }}
+          >
+            <Button
+              variant="contained"
+              color="primary"
+              sx={{ mt: 2 }}
+              fullWidth
+              onClick={addRow}
+            >
+              Add
+            </Button>
+            <Button
+              variant="contained"
+              color="error"
+              onClick={handleClose}
+              sx={{ mt: 2 }}
+              fullWidth
+            >
+              Cancel
+            </Button>
+          </Box>
+        </Box>
+      </Modal>
+
+      <Modal open={editRow != null} onClose={() => setEditRow(null)}>
+        <Box
+          sx={{
+            position: "absolute",
+            top: "50%",
+            left: "50%",
+            transform: "translate(-50%, -50%)",
+            width: 400,
+            bgcolor: "background.paper",
+            borderRadius: 2,
+            boxShadow: 24,
+            p: 4,
+          }}
+        >
+          <Typography variant="h5" component="h2" align="center" mb={4}>
+            Update Country
+          </Typography>
+          <FormControl margin="dense" fullWidth>
+            <FormLabel sx={{fontSize:"0.8rem"}}>Country Name</FormLabel>
+            <OutlinedInput
+              size="small"
+              value={editRow?.countryname || ""}
+              onChange={(e) =>
+                setEditRow({ ...editRow!, countryname: e.target.value })
+              }
+            />
+            <FormHelperText>Enter the Country Name</FormHelperText>
+          </FormControl>
+          <FormControl fullWidth margin="dense">
+            <FormLabel sx={{fontSize:"0.8rem"}}>Country Code</FormLabel>
+            <OutlinedInput
+              size="small"
+              value={editRow?.countrycode || ""}
+              onChange={(e) =>
+                setEditRow({ ...editRow!, countrycode: Number(e.target.value) })
+              }
+            />
+            <FormHelperText>Enter the Country Name</FormHelperText>
+          </FormControl>
+          <FormControl fullWidth>
+            <FormLabel sx={{fontSize:"0.8rem"}}>Active</FormLabel>
+            <Switch
+              size="small"
+              checked={editRow?.active || false}
+              onChange={() =>
+                setEditRow({ ...editRow!, active: !editRow?.active })
+              }
+            />
+          </FormControl>
+          <Box
+            sx={{ display: "flex", gap: 10, justifyContent: "space-between" }}
+          >
+            <Button
+              variant="contained"
+              color="primary"
+              sx={{ mt: 2 }}
+              fullWidth
+              onClick={updateCountry}
+            >
+              Update
+            </Button>
+            <Button
+              variant="contained"
+              color="error"
+              sx={{ mt: 2 }}
+              fullWidth
+              onClick={updateCountry}
+            >
+              Cancel
+            </Button>
+          </Box>
+        </Box>
+      </Modal>
     </>
   );
 };

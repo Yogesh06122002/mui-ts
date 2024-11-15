@@ -16,7 +16,16 @@ import { Visibility, VisibilityOff } from "@mui/icons-material";
 import HttpsIcon from "@mui/icons-material/Https";
 import EmailIcon from "@mui/icons-material/Email";
 import * as Yup from "yup";
-import { Formik } from "formik";
+import { Formik, FormikHelpers } from "formik";
+
+
+
+
+interface SignUpValues{
+  name: string;
+  email: string;
+  password: string;
+}
 
 const validationSchema = Yup.object({
   name: Yup.string().required("Name is required"),
@@ -36,7 +45,7 @@ const SignUp = () => {
   };
 
 
-  const handleSubmit = (values: object, actions: any) => {
+  const handleSubmit = (values: object, actions: FormikHelpers<SignUpValues>) => {
     console.log(values);
     navigate("/login");
     actions.setSubmitting(false);
