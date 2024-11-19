@@ -423,7 +423,8 @@ export const CountryList = () => {
             >
               Update
             </Button>
-            <Button variant="contained" color="error" sx={{ mt: 2 }} fullWidth>
+            <Button variant="contained" color="error" sx={{ mt: 2 }} fullWidth
+            onClick={() => setEditRow(null)}>
               Cancel
             </Button>
           </Box>

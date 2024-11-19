@@ -11,6 +11,7 @@ import {
   Alert,
 } from "@mui/material";
 import AccountCircleIcon from "@mui/icons-material/AccountCircle";
+
 import { orange } from "@mui/material/colors";
 import { Link, useNavigate } from "react-router-dom";
 import { useState } from "react";
@@ -19,13 +20,9 @@ import HttpsIcon from "@mui/icons-material/Https";
 import EmailIcon from "@mui/icons-material/Email";
 import { Formik, FormikHelpers } from "formik";
 import * as Yup from "yup";
-import userList from "../assets/user.json";
 import CloseIcon from "@mui/icons-material/Close";
+import authServises, { LoginValues } from "../services/authServices";
 
-interface LoginValues{
-  email: string;
-  password: string;
-}
 
 const validateSchema = Yup.object({
   email: Yup.string()
@@ -40,23 +37,39 @@ const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [open, setOpen] = useState(false);
   const [message, setMessage] = useState("");
+  const [sevirity, setSevirity] = useState<"success" | "error">("error");
 
-  const initialValues = {
+  const initialValues:LoginValues = {
     email: "",
     password: "",
+    latitude:"37.7749", 
+    longitude: "-122.4194",
+    device: "Web",
   };
 
-  const handleSubmit = (values: LoginValues, actions: FormikHelpers<LoginValues>) => {
-    const user = userList.find(
-      (user) => user.email === values.email && user.password === values.password
-    );
-    if (user) {
-      navigate("/");
-    } else {
+  const handleSubmit = async (values: LoginValues, actions: FormikHelpers<LoginValues>) => {
+    try{
+      const response = await authServises.login(values);
+      localStorage.setItem("token", response.token);
+      if(response.userName){
+      console.log(`Welcome to ${response.userName}`);
+      setMessage(`Welcome to ${response.userName}`);
+      setSevirity("success");
+      }
+
+      setTimeout(() => {
+        navigate("/");
+      }, 1500);
+      setOpen(true);
+    }catch(err:unknown) {
+      console.log("Failed to login", err);
       setMessage("Invalid email or password");
       setOpen(true);
+      setSevirity("error");
+    }finally{
+      actions.setSubmitting(false);
     }
-    actions.setSubmitting(false);
+    
   };
 
   return (
@@ -182,6 +195,8 @@ const Login = () => {
             )}
           </Formik>
         </Box>
+       
+
         <Typography variant="body1" mt={3} color="initial">
           Don't have an account? <Link to="/signup">Register</Link>
         </Typography>
@@ -214,7 +229,7 @@ const Login = () => {
           }
           }
           variant="filled"
-          severity="error">{message}</Alert>
+          severity={sevirity}>{message}</Alert>
         </Snackbar>
       </Container>
     </>
