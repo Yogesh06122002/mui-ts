@@ -24,7 +24,8 @@ import ModeEditOutlineIcon from "@mui/icons-material/ModeEditOutline";
 import DeleteIcon from "@mui/icons-material/Delete";
 import { DataGrid, GridColDef, GridRenderCellParams } from "@mui/x-data-grid";
 import { useState } from "react";
-
+import { useFormik } from "formik";
+import * as Yup from "yup";
 interface CountryRow {
   countryname: string;
   countrycode: number;
@@ -96,15 +97,8 @@ export const CountryList = () => {
   const handleOpen = () => setOpen(true);
   const handleClose = () => setOpen(false);
 
-  const [newCountry, setNewCountry] = useState<{
-    countryname: string;
-    countrycode: string | number;
-    active: boolean;
-  }>({
-    countryname: "",
-    countrycode: "",
-    active: false,
-  });
+ 
+ 
 
   const handleEdit = (row: CountryRow) => {
     setEditRow({ ...row });
@@ -114,10 +108,7 @@ export const CountryList = () => {
     setSearch(e.target.value);
   };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setNewCountry((prev) => ({ ...prev, [name]: value }));
-  };
+ 
 
   const toggleCountry = (id: number) => {
     setRows((prevRows) =>
@@ -127,20 +118,16 @@ export const CountryList = () => {
     );
   };
 
-  const addRow = () => {
+  const addRow = (newCountry : { countryname: string; countrycode: string }) => {
     const newId = rows.length + 1;
-    const newRow = {
+    const newRow: CountryRow = {
       ...newCountry,
       id: newId,
       sn: newId,
+      active: true,
       countrycode: Number(newCountry.countrycode),
     };
     setRows((prevRows) => [...prevRows, newRow]);
-    setNewCountry({
-      countryname: "",
-      countrycode: "",
-      active: false,
-    });
     handleClose();
   };
 
@@ -148,17 +135,10 @@ export const CountryList = () => {
     setRows((prevRows) => prevRows.filter((row) => row.id !== id));
   };
 
-  const updateCountry = () => {
+  const updateCountry = (updatedCountry: CountryRow) => {
     setRows((prevRows) =>
       prevRows.map((row) =>
-        row.id === editRow?.id
-          ? {
-              ...row,
-              countryname: editRow?.countryname,
-              countrycode: Number(editRow?.countrycode),
-              active: editRow?.active,
-            }
-          : row
+        row.id === updatedCountry.id ? updatedCountry : row
       )
     );
     setEditRow(null);
@@ -221,9 +201,38 @@ export const CountryList = () => {
     },
   ];
 
+  const addCountryFormik = useFormik({
+    initialValues: {
+      countryname: "",
+      countrycode: "",
+    },
+    validationSchema: Yup.object({
+      countryname: Yup.string().required("Country name is required"),
+      countrycode: Yup.number().required("Country code is required").typeError("Country code must be a number"),
+    }),
+    onSubmit: (values) => {
+      addRow({ countryname: values.countryname, countrycode: values.countrycode});
+      setOpen(!open);
+    },
+
+  
+  });
+
+  const editCountryFormik = useFormik({
+    enableReinitialize:true,
+    initialValues: editRow || { countryname: "", countrycode: "",active: false},
+    validationSchema: Yup.object({
+      countryname: Yup.string().required("Country name is required"),
+      countrycode: Yup.number().required("Country code is required").typeError("Country code must be a number"),
+    }),
+    onSubmit: (values) => {
+      updateCountry({...editRow!,countryname: values.countryname,countrycode: Number(values.countrycode),active: values.active});
+      setEditRow(null);
+    },
+  })
   return (
     <>
-      <Card variant="outlined" elevation={10}>
+      <Card  elevation={8}>
         <CardHeader
           avatar={<Avatar sx={{ bgcolor: deepOrange[400] }}>CM</Avatar>}
           title="Country Master"
@@ -295,36 +304,44 @@ export const CountryList = () => {
           <Typography variant="h5" align="center" component="h2">
             Add Country
           </Typography>
-          <FormControl fullWidth margin="dense" >
-            <FormLabel sx={{fontSize:"0.8rem"}}>Country Name</FormLabel>
+          <form onSubmit={addCountryFormik.handleSubmit}>
+          <FormControl fullWidth margin="dense">
+            <FormLabel sx={{ fontSize: "0.8rem" }}>Country Name</FormLabel>
             <OutlinedInput
               placeholder="Enter the Country Name"
               size="small"
-              value={newCountry.countryname || ""}
-              onChange={handleChange}
+              value={addCountryFormik.values.countryname}
+              onChange={addCountryFormik.handleChange}
+              onBlur={addCountryFormik.handleBlur}
+              error={addCountryFormik.touched.countryname && Boolean(addCountryFormik.errors.countryname)}
               name="countryname"
             />
-            <FormHelperText>Enter the Country Name</FormHelperText>
+            <FormHelperText error> {addCountryFormik.touched.countryname &&
+                addCountryFormik.errors.countryname}</FormHelperText>
           </FormControl>
           <FormControl fullWidth margin="dense">
-            <FormLabel sx={{fontSize:"0.8rem"}}>Country Code</FormLabel>
+            <FormLabel sx={{ fontSize: "0.8rem" }}>Country Code</FormLabel>
             <OutlinedInput
+             placeholder="Enter the Country Code"
               size="small"
-              value={newCountry.countrycode || ""}
-              onChange={handleChange}
+              value={addCountryFormik.values.countrycode}
+              onChange={addCountryFormik.handleChange}
+              onBlur={addCountryFormik.handleBlur}
+              error={addCountryFormik.touched.countrycode && Boolean(addCountryFormik.errors.countrycode)}
               name="countrycode"
             />
-            <FormHelperText>Enter the Country Code</FormHelperText>
+            <FormHelperText error> {addCountryFormik.touched.countrycode &&
+                addCountryFormik.errors.countrycode}</FormHelperText>
           </FormControl>
           <Box
             sx={{ display: "flex", gap: 10, justifyContent: "space-between" }}
           >
             <Button
+            type="submit"
               variant="contained"
               color="primary"
               sx={{ mt: 2 }}
               fullWidth
-              onClick={addRow}
             >
               Add
             </Button>
@@ -338,6 +355,7 @@ export const CountryList = () => {
               Cancel
             </Button>
           </Box>
+          </form>
         </Box>
       </Modal>
 
@@ -358,30 +376,33 @@ export const CountryList = () => {
           <Typography variant="h5" component="h2" align="center" mb={4}>
             Update Country
           </Typography>
+          <form onSubmit={editCountryFormik.handleSubmit}>
           <FormControl margin="dense" fullWidth>
-            <FormLabel sx={{fontSize:"0.8rem"}}>Country Name</FormLabel>
+            <FormLabel sx={{ fontSize: "0.8rem" }}>Country Name</FormLabel>
             <OutlinedInput
+            name="countryname"
               size="small"
-              value={editRow?.countryname || ""}
-              onChange={(e) =>
-                setEditRow({ ...editRow!, countryname: e.target.value })
-              }
+              value={editCountryFormik.values.countryname}
+              onChange={editCountryFormik.handleChange}
+              onBlur={editCountryFormik.handleBlur}
+              error={editCountryFormik.touched.countryname && Boolean(editCountryFormik.errors.countryname)}
             />
-            <FormHelperText>Enter the Country Name</FormHelperText>
+            <FormHelperText error>{editCountryFormik.touched.countryname && editCountryFormik.errors.countryname}</FormHelperText>
           </FormControl>
           <FormControl fullWidth margin="dense">
-            <FormLabel sx={{fontSize:"0.8rem"}}>Country Code</FormLabel>
+            <FormLabel sx={{ fontSize: "0.8rem" }}>Country Code</FormLabel>
             <OutlinedInput
+            name="countrycode"
               size="small"
-              value={editRow?.countrycode || ""}
-              onChange={(e) =>
-                setEditRow({ ...editRow!, countrycode: Number(e.target.value) })
-              }
+              value={editCountryFormik.values.countrycode}
+             onChange={editCountryFormik.handleChange}
+              onBlur={editCountryFormik.handleBlur}
+              error={editCountryFormik.touched.countrycode && Boolean(editCountryFormik.errors.countrycode)}
             />
-            <FormHelperText>Enter the Country Name</FormHelperText>
+            <FormHelperText error>{editCountryFormik.touched.countrycode && editCountryFormik.errors.countrycode}</FormHelperText>
           </FormControl>
           <FormControl fullWidth>
-            <FormLabel sx={{fontSize:"0.8rem"}}>Active</FormLabel>
+            <FormLabel sx={{ fontSize: "0.8rem" }}>Active</FormLabel>
             <Switch
               size="small"
               checked={editRow?.active || false}
@@ -394,24 +415,19 @@ export const CountryList = () => {
             sx={{ display: "flex", gap: 10, justifyContent: "space-between" }}
           >
             <Button
+              type="submit"
               variant="contained"
               color="primary"
               sx={{ mt: 2 }}
               fullWidth
-              onClick={updateCountry}
             >
               Update
             </Button>
-            <Button
-              variant="contained"
-              color="error"
-              sx={{ mt: 2 }}
-              fullWidth
-              onClick={updateCountry}
-            >
+            <Button variant="contained" color="error" sx={{ mt: 2 }} fullWidth>
               Cancel
             </Button>
           </Box>
+            </form>
         </Box>
       </Modal>
     </>

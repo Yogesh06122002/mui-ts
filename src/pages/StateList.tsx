@@ -24,6 +24,8 @@ import ModeEditOutlineIcon from "@mui/icons-material/ModeEditOutline";
 import DeleteIcon from "@mui/icons-material/Delete";
 import { DataGrid, GridColDef, GridRenderCellParams } from "@mui/x-data-grid";
 import { useState } from "react";
+import { useFormik } from "formik";
+import * as Yup from "yup";
 
 interface StateRow {
   stateName: string;
@@ -44,92 +46,94 @@ export const StateList = () => {
       active: true,
       id: 1,
       sn: 1,
-    },{
+    },
+    {
       stateName: "Arunachal Pradesh",
       stateCode: 2,
       active: true,
       id: 2,
       sn: 2,
-    },{
+    },
+    {
       stateName: "Assam",
       stateCode: 3,
       active: true,
       id: 3,
       sn: 3,
-    },{
+    },
+    {
       stateName: "Bihar",
       stateCode: 4,
       active: true,
       id: 4,
       sn: 4,
-    },{
+    },
+    {
       stateName: "Chhattisgarh",
       stateCode: 5,
       active: true,
       id: 5,
       sn: 5,
-    },{
+    },
+    {
       stateName: "Goa",
       stateCode: 6,
       active: true,
       id: 6,
       sn: 6,
-    },{
+    },
+    {
       stateName: "Gujarat",
       stateCode: 7,
       active: true,
       id: 7,
       sn: 7,
-    },{
+    },
+    {
       stateName: "Haryana",
       stateCode: 8,
       active: true,
       id: 8,
       sn: 8,
-    },{
+    },
+    {
       stateName: "Himachal Pradesh",
       stateCode: 9,
       active: true,
       id: 9,
       sn: 9,
-    },{
+    },
+    {
       stateName: "Jharkhand",
       stateCode: 10,
       active: true,
       id: 10,
       sn: 10,
-    },{
+    },
+    {
       stateName: "Karnataka",
       stateCode: 11,
       active: true,
       id: 11,
       sn: 11,
-    },{
+    },
+    {
       stateName: "Madhya Pradesh",
       stateCode: 12,
       active: true,
       id: 12,
       sn: 12,
-    },{
+    },
+    {
       stateName: "Maharashtra",
       stateCode: 13,
       active: true,
       id: 13,
       sn: 13,
-    }
+    },
   ]);
   const handleOpen = () => setOpen(true);
   const handleClose = () => setOpen(false);
-
-  const [newState, setNewState] = useState<{
-    stateName: string;
-    stateCode: string | number;
-    active: boolean;
-  }>({
-    stateName: "",
-    stateCode: "",
-    active: false,
-  });
 
   const handleEdit = (row: StateRow) => {
     setEditRow({ ...row });
@@ -137,11 +141,6 @@ export const StateList = () => {
 
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearch(e.target.value);
-  };
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setNewState((prev) => ({ ...prev, [name]: value }));
   };
 
   const toggleCountry = (id: number) => {
@@ -152,20 +151,16 @@ export const StateList = () => {
     );
   };
 
-  const addRow = () => {
+  const addRow = (newState: { stateName: string; stateCode: string }) => {
     const newId = rows.length + 1;
-    const newRow = {
+    const newRow: StateRow = {
       ...newState,
       id: newId,
       sn: newId,
+      active: true,
       stateCode: Number(newState.stateCode),
     };
     setRows((prevRows) => [...prevRows, newRow]);
-    setNewState({
-      stateName: "",
-      stateCode: "",
-      active: false,
-    });
     handleClose();
   };
 
@@ -173,18 +168,9 @@ export const StateList = () => {
     setRows((prevRows) => prevRows.filter((row) => row.id !== id));
   };
 
-  const updateState = () => {
+  const updateState = (updatedState: StateRow) => {
     setRows((prevRows) =>
-      prevRows.map((row) =>
-        row.id === editRow?.id
-          ? {
-              ...row,
-              stateName: editRow?.stateName,
-              stateCode: Number(editRow?.stateCode),
-              active: editRow?.active,
-            }
-          : row
-      )
+      prevRows.map((row) => (row.id === updatedState.id ? updatedState : row))
     );
     setEditRow(null);
   };
@@ -246,9 +232,46 @@ export const StateList = () => {
     },
   ];
 
+  const addStateFormik = useFormik({
+    initialValues: {
+      stateName: "",
+      stateCode: "",
+    },
+    validationSchema: Yup.object({
+      stateName: Yup.string().required("Country name is required"),
+      stateCode: Yup.number()
+        .required("Country code is required")
+        .typeError("Country code must be a number"),
+    }),
+    onSubmit: (values) => {
+      addRow({ stateName: values.stateName, stateCode: values.stateCode });
+      setOpen(!open);
+    },
+  });
+
+  const editStateFormik = useFormik({
+    enableReinitialize: true,
+    initialValues: editRow || { stateName: "", stateCode: "", active: false },
+    validationSchema: Yup.object({
+      stateName: Yup.string().required("State name is required"),
+      stateCode: Yup.number()
+        .required("State code is required")
+        .typeError("State code must be a number"),
+    }),
+    onSubmit: (values) => {
+      updateState({
+        ...editRow!,
+        stateName: values.stateName,
+        stateCode: Number(values.stateCode),
+        active: values.active,
+      });
+      setEditRow(null);
+    },
+  });
+
   return (
     <>
-      <Card variant="outlined" elevation={10}>
+      <Card elevation={8}>
         <CardHeader
           avatar={<Avatar sx={{ bgcolor: deepOrange[400] }}>SM</Avatar>}
           title="State Master"
@@ -320,49 +343,70 @@ export const StateList = () => {
           <Typography variant="h5" align="center" component="h2">
             Add State
           </Typography>
-          <FormControl fullWidth margin="dense" >
-            <FormLabel sx={{fontSize:"0.8rem"}}>State Name</FormLabel>
-            <OutlinedInput
-              placeholder="Enter the State Name"
-              size="small"
-              value={newState.stateName || ""}
-              onChange={handleChange}
-              name="stateName"
-            />
-            <FormHelperText>Enter the State Name</FormHelperText>
-          </FormControl>
-          <FormControl fullWidth margin="dense">
-            <FormLabel sx={{fontSize:"0.8rem"}}>State Code</FormLabel>
-            <OutlinedInput
-              size="small"
-              value={newState.stateCode || ""}
-              onChange={handleChange}
-              name="stateCode"
-            />
-            <FormHelperText>Enter the State Code</FormHelperText>
-          </FormControl>
-          <Box
-            sx={{ display: "flex", gap: 10, justifyContent: "space-between" }}
-          >
-            <Button
-              variant="contained"
-              color="primary"
-              sx={{ mt: 2 }}
-              fullWidth
-              onClick={addRow}
+          <form onSubmit={addStateFormik.handleSubmit}>
+            <FormControl fullWidth margin="dense">
+              <FormLabel sx={{ fontSize: "0.8rem" }}>State Name</FormLabel>
+              <OutlinedInput
+                placeholder="Enter the State Name"
+                size="small"
+                value={addStateFormik.values.stateName}
+                onChange={addStateFormik.handleChange}
+                onBlur={addStateFormik.handleBlur}
+                error={
+                  addStateFormik.touched.stateName &&
+                  Boolean(addStateFormik.errors.stateName)
+                }
+                name="stateName"
+              />
+              <FormHelperText error>
+                {" "}
+                {addStateFormik.touched.stateName &&
+                  addStateFormik.errors.stateName}
+              </FormHelperText>
+            </FormControl>
+            <FormControl fullWidth margin="dense">
+              <FormLabel sx={{ fontSize: "0.8rem" }}>State Code</FormLabel>
+              <OutlinedInput
+                placeholder="Enter the State Code"
+                size="small"
+                value={addStateFormik.values.stateCode}
+                onChange={addStateFormik.handleChange}
+                onBlur={addStateFormik.handleBlur}
+                error={
+                  addStateFormik.touched.stateCode &&
+                  Boolean(addStateFormik.errors.stateCode)
+                }
+                name="stateCode"
+              />
+              <FormHelperText error>
+                {" "}
+                {addStateFormik.touched.stateCode &&
+                  addStateFormik.errors.stateCode}
+              </FormHelperText>
+            </FormControl>
+            <Box
+              sx={{ display: "flex", gap: 10, justifyContent: "space-between" }}
             >
-              Add
-            </Button>
-            <Button
-              variant="contained"
-              color="error"
-              onClick={handleClose}
-              sx={{ mt: 2 }}
-              fullWidth
-            >
-              Cancel
-            </Button>
-          </Box>
+              <Button
+                type="submit"
+                variant="contained"
+                color="primary"
+                sx={{ mt: 2 }}
+                fullWidth
+              >
+                Add
+              </Button>
+              <Button
+                variant="contained"
+                color="error"
+                onClick={handleClose}
+                sx={{ mt: 2 }}
+                fullWidth
+              >
+                Cancel
+              </Button>
+            </Box>
+          </form>
         </Box>
       </Modal>
 
@@ -383,60 +427,77 @@ export const StateList = () => {
           <Typography variant="h5" component="h2" align="center" mb={4}>
             Update State
           </Typography>
-          <FormControl margin="dense" fullWidth>
-            <FormLabel sx={{fontSize:"0.8rem"}}>State Name</FormLabel>
-            <OutlinedInput
-              size="small"
-              value={editRow?.stateName || ""}
-              onChange={(e) =>
-                setEditRow({ ...editRow!, stateName: e.target.value })
-              }
-            />
-            <FormHelperText>Enter the State Name</FormHelperText>
-          </FormControl>
-          <FormControl fullWidth margin="dense">
-            <FormLabel sx={{fontSize:"0.8rem"}}>State Code</FormLabel>
-            <OutlinedInput
-              size="small"
-              value={editRow?.stateCode || ""}
-              onChange={(e) =>
-                setEditRow({ ...editRow!, stateCode: Number(e.target.value) })
-              }
-            />
-            <FormHelperText>Enter the State Name</FormHelperText>
-          </FormControl>
-          <FormControl fullWidth>
-            <FormLabel sx={{fontSize:"0.8rem"}}>Active</FormLabel>
-            <Switch
-              size="small"
-              checked={editRow?.active || false}
-              onChange={() =>
-                setEditRow({ ...editRow!, active: !editRow?.active })
-              }
-            />
-          </FormControl>
-          <Box
-            sx={{ display: "flex", gap: 10, justifyContent: "space-between" }}
-          >
-            <Button
-              variant="contained"
-              color="primary"
-              sx={{ mt: 2 }}
-              fullWidth
-              onClick={updateState}
+          <form onSubmit={editStateFormik.handleSubmit}>
+            <FormControl margin="dense" fullWidth>
+              <FormLabel sx={{ fontSize: "0.8rem" }}>State Name</FormLabel>
+              <OutlinedInput
+                name="stateName"
+                size="small"
+                value={editStateFormik.values.stateName}
+                onChange={editStateFormik.handleChange}
+                onBlur={editStateFormik.handleBlur}
+                error={
+                  editStateFormik.touched.stateName &&
+                  Boolean(editStateFormik.errors.stateName)
+                }
+              />
+              <FormHelperText error>
+                {" "}
+                {editStateFormik.touched.stateName &&
+                  editStateFormik.errors.stateName}
+              </FormHelperText>
+            </FormControl>
+            <FormControl fullWidth margin="dense">
+              <FormLabel sx={{ fontSize: "0.8rem" }}>State Code</FormLabel>
+              <OutlinedInput
+                name="stateCode"
+                size="small"
+                value={editStateFormik.values.stateCode}
+                onChange={editStateFormik.handleChange}
+                onBlur={editStateFormik.handleBlur}
+                error={
+                  editStateFormik.touched.stateCode &&
+                  Boolean(editStateFormik.errors.stateCode)
+                }
+              />
+              <FormHelperText error>
+                {editStateFormik.touched.stateCode &&
+                  editStateFormik.errors.stateCode}
+              </FormHelperText>
+            </FormControl>
+            <FormControl fullWidth>
+              <FormLabel sx={{ fontSize: "0.8rem" }}>Active</FormLabel>
+              <Switch
+                size="small"
+                checked={editRow?.active || false}
+                onChange={() =>
+                  setEditRow({ ...editRow!, active: !editRow?.active })
+                }
+              />
+            </FormControl>
+            <Box
+              sx={{ display: "flex", gap: 10, justifyContent: "space-between" }}
             >
-              Update
-            </Button>
-            <Button
-              variant="contained"
-              color="error"
-              sx={{ mt: 2 }}
-              fullWidth
-              onClick={updateState}
-            >
-              Cancel
-            </Button>
-          </Box>
+              <Button
+                variant="contained"
+                color="primary"
+                sx={{ mt: 2 }}
+                fullWidth
+                type="submit"
+              >
+                Update
+              </Button>
+              <Button
+                variant="contained"
+                color="error"
+                sx={{ mt: 2 }}
+                fullWidth
+                onClick={() => setEditRow(null)}
+              >
+                Cancel
+              </Button>
+            </Box>
+          </form>
         </Box>
       </Modal>
     </>
